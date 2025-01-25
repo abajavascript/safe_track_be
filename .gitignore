@@ -12,6 +12,7 @@
 /build
 
 firebaseServiceAccountKey.json
+firebaseServiceAccountKey.js
 
 # misc
 .DS_Store
