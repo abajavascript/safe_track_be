@@ -1,7 +1,6 @@
 const express = require("express");
 const { authorizeUser } = require("../middleware/authMiddleware");
-const { saveResponse } = require("../services/responseService");
-
+const { saveResponse, getLastStatus } = require("../services/responseService");
 const router = express.Router();
 
 // Add a response
@@ -27,6 +26,15 @@ router.post("/", authorizeUser, async (req, res) => {
     res
       .status(201)
       .json({ success: true, message: "Response saved successfully" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+router.get("/status/:uid", authorizeUser, async (req, res) => {
+  try {
+    const status = await getLastStatus(req.params.uid);
+    res.status(200).json({ success: true, data: status });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

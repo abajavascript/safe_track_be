@@ -9,6 +9,7 @@ const {
   getAllUsers,
   getManagers,
   isTableEmpty,
+  deleteUserById,
 } = require("../services/userService");
 const {
   validateToken,
@@ -70,7 +71,7 @@ router.post("/add", validateToken, async (req, res) => {
 
     // Determine the role
     let role = "User"; // Default role
-    let status = "PendingApproval";
+    let status = "Pending";
     // Check if there are any existing records in the users table
     if (await isTableEmpty("users")) {
       role = "Admin"; // If no users exist, assign Admin
@@ -209,28 +210,22 @@ router.delete("/:uid", authorizeUser, async (req, res) => {
     const userUid = req.user.uid;
     const targetUserUid = req.params.uid;
 
-    const targetUserRef = db.collection("users").doc(targetUserUid);
-    const targetUserSnapshot = await targetUserRef.get();
+    const targetUserExists = await existUserById(targetUserUid);
 
-    if (!targetUserSnapshot.exists) {
+    if (!targetUserExists) {
       return res
         .status(404)
         .json({ success: false, message: "User not found" });
     }
 
-    const targetUserData = targetUserSnapshot.data();
+    const targetUserData = await getUserById(targetUserUid);
 
     // Admin can delete any user
-    if (userRole === "Admin") {
-      await targetUserRef.delete();
-      return res
-        .status(200)
-        .json({ success: true, message: "User deleted successfully" });
-    }
-
-    // Operator can delete users assigned to them
-    if (userRole === "Operator" && targetUserData.operator_uid === userUid) {
-      await targetUserRef.delete();
+    if (
+      userRole === "Admin" ||
+      (userRole === "Operator" && targetUserData.data.manager_uid === userUid)
+    ) {
+      await deleteUserById(targetUserUid);
       return res
         .status(200)
         .json({ success: true, message: "User deleted successfully" });
@@ -241,15 +236,6 @@ router.delete("/:uid", authorizeUser, async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 });
-
-// router.get("/regions", validateToken, async (req, res) => {
-//   try {
-//     const regions = await getRegions();
-//     res.status(200).json(regions);
-//   } catch (error) {
-//     res.status(500).json({ success: false, message: error.message });
-//   }
-// });
 
 router.post("/add-or-update", authorizeUser, async (req, res) => {
   try {

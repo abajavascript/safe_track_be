@@ -83,7 +83,7 @@ const sendNotificationsForRegion = async (regionId) => {
         createdAt: new Date().toISOString(),
         type: "self-check",
       };
-      //await requestRef.set(requestData);
+      await requestRef.set(requestData);
       console.log(`userData ${userData.uid}`);
       await sendNotification(userData.uid, payload);
     });

@@ -1,4 +1,5 @@
 const { db } = require("../firebaseConfig");
+const admin = require("firebase-admin");
 
 const isTableEmpty = async (table) => {
   const usersSnapshot = await db.collection(table).get();
@@ -94,8 +95,7 @@ const addOrUpdateUser = async (userData) => {
     const userRef = db.collection("users").doc(userData.uid);
 
     const managerRole = userData.manager_role === "Admin" ? "Operator" : "User";
-    const newStatus =
-      userData.status === "PendingApproval" ? "PendingApproval" : "Approved";
+    const newStatus = userData.status === "Pending" ? "Pending" : "Approved";
 
     await userRef.set(
       {
@@ -142,6 +142,17 @@ const getManagers = async () => {
   }
 };
 
+const deleteUserById = async (uid) => {
+  try {
+    const userRef = db.collection("users").doc(uid);
+    await userRef.delete();
+    await admin.auth().deleteUser(uid);
+    return { success: true, message: "User deleted successfully" };
+  } catch (error) {
+    throw new Error("Error deleting user: " + error.message);
+  }
+};
+
 module.exports = {
   getUserById,
   existUserById,
@@ -152,6 +163,6 @@ module.exports = {
   updateUserStatus,
   getAllUsers,
   addOrUpdateUser,
-  //  getRegions,
   getManagers,
+  deleteUserById,
 };
