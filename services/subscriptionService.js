@@ -1,3 +1,4 @@
+const e = require("express");
 const { db, webPush } = require("../firebaseConfig");
 
 const sendNotification = async (uid, message) => {
@@ -5,15 +6,6 @@ const sendNotification = async (uid, message) => {
     // Fetch the manager's subscription object
     console.log("sendNotification");
     console.log(uid);
-    // const subscriptionsRef = db
-    //   .collection("subscriptions")
-    //   .where("uid", "==", uid);
-    // const snapshot = await subscriptionsRef.get();
-
-    // if (snapshot.empty) {
-    //   console.log("No subscriptions found for the user.");
-    //   return;
-    // }
 
     const subscriptionsRef = db.collection("subscriptions").doc(uid);
     const snapshot = await subscriptionsRef.get();
@@ -74,11 +66,17 @@ const sendNotificationsForRegion = async (regionId) => {
         title: "Self-Check Reminder",
         body: `Dear ${userData.name} ${userData.surname}. Please complete your self-check.`,
         icon: "/logo192.png",
+        data: {
+          url: "/self-check", // URL to open when the notification is clicked
+        },
       };
       // Create a notification request
       const requestRef = db.collection("requests").doc();
       const requestData = {
-        ...userData,
+        //...userData,
+        uid: userData.uid,
+        email: userData.email,
+        region: userData.region,
         regionId,
         createdAt: new Date().toISOString(),
         type: "self-check",
@@ -99,7 +97,7 @@ const saveSubscription = async (subscription, uid) => {
     await subscriptionRef.set({ subscription }, { merge: true });
     //    await db.collection("subscriptions").add({ subscription, uid });
   } catch (error) {
-    console.error("Failed to send notification:", error);
+    console.error("Failed to save subscription:", error);
   }
 };
 
