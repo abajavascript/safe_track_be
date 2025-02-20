@@ -173,31 +173,10 @@ router.get("/", authorizeUser, async (req, res) => {
     const userRole = req.userData.role;
     const userUid = req.user.uid;
 
-    if (userRole === "Admin" || userRole === "Operator") {
-      // Admin: Return all users
-      const response = await getAllUsers();
-      const assignedUsers = response.data.filter(
-        (user) =>
-          userRole === "Admin" ||
-          (userRole === "Operator" && user.manager_uid === userUid) ||
-          user.uid === userUid
-      );
-      //add emails
-      // const assignedUsersWithEmails = await Promise.all(
-      //   assignedUsers.map(async (user) => {
-      //     if (user.email) {
-      //       // Use email from Firestore if available
-      //       return user;
-      //     } else {
-      //       // Fetch email from Firebase Auth
-      //       const authUser = await auth.getUser(user.uid);
-      //       return { ...user, email: authUser.email };
-      //     }
-      //   })
-      // );
+    const response = await getAllUsers(userUid, userRole);
+    const assignedUsers = response.data;
 
-      return res.status(200).json({ success: true, data: assignedUsers });
-    }
+    return res.status(200).json({ success: true, data: assignedUsers });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

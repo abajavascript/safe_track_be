@@ -79,11 +79,28 @@ const updateUserStatus = async (uid, status) => {
 };
 
 // Get all users
-const getAllUsers = async () => {
+const getAllUsers = async (userUid, userRole) => {
   try {
-    const usersSnapshot = await db.collection("users").get();
     const users = [];
-    usersSnapshot.forEach((doc) => users.push(doc.data()));
+    if (userRole === "Admin") {
+      const usersSnapshot = await db.collection("users").get();
+      usersSnapshot.forEach((doc) => users.push(doc.data()));
+    } else {
+      if (userRole === "Operator") {
+        const usersSnapshot = await db
+          .collection("users")
+          .where("manager_uid", "==", userUid)
+          .get();
+        usersSnapshot.forEach((doc) => users.push(doc.data()));
+      }
+      if (!users.find((u) => u.uid === userUid)) {
+        const usersSnapshot = await db
+          .collection("users")
+          .where("uid", "==", userUid)
+          .get();
+        usersSnapshot.forEach((doc) => users.push(doc.data()));
+      }
+    }
     return { success: true, data: users };
   } catch (error) {
     throw new Error("Failed to get users: " + error.message);

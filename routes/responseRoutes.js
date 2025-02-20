@@ -1,6 +1,10 @@
 const express = require("express");
 const { authorizeUser } = require("../middleware/authMiddleware");
-const { saveResponse, getLastStatus } = require("../services/responseService");
+const {
+  saveResponse,
+  getLastStatus,
+  getLastStatuses,
+} = require("../services/responseService");
 const router = express.Router();
 
 // Add a response
@@ -35,6 +39,15 @@ router.get("/status/:uid", authorizeUser, async (req, res) => {
   try {
     const status = await getLastStatus(req.params.uid);
     res.status(200).json({ success: true, data: status });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+router.get("/statuses/:uid", authorizeUser, async (req, res) => {
+  try {
+    const statuses = await getLastStatuses(req.params.uid);
+    res.status(200).json({ success: true, data: statuses });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
