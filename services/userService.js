@@ -56,6 +56,17 @@ const updateUser = async (uid, userData) => {
   }
 };
 
+const updateUserFields = async (uid, userData) => {
+  try {
+    const userRef = db.collection("users").doc(uid);
+    console.log(userData);
+    await userRef.update(userData);
+    return { success: true, message: "User updated successfully" };
+  } catch (error) {
+    throw new Error("Failed to update user information: " + error.message);
+  }
+};
+
 // Update user role
 const updateUserRole = async (uid, role) => {
   try {
@@ -85,6 +96,25 @@ const getAllUsers = async (userUid, userRole) => {
     if (userRole === "Admin") {
       const usersSnapshot = await db.collection("users").get();
       usersSnapshot.forEach((doc) => users.push(doc.data()));
+      //Added users with unverified email
+      const authUsers = await admin.auth().listUsers();
+      authUsers.users.forEach((authUser) => {
+        if (!authUser.emailVerified) {
+          users.push({
+            uid: authUser.uid,
+            email: authUser.email,
+            emailVerified: false,
+            status: "Unverified",
+            name: "",
+            surname: "",
+            phone: "",
+            region: "",
+            manager_uid: "",
+            manager_name: "",
+            role: "",
+          });
+        }
+      });
     } else {
       if (userRole === "Operator") {
         const usersSnapshot = await db
@@ -176,6 +206,7 @@ module.exports = {
   isTableEmpty,
   addUser,
   updateUser,
+  updateUserFields,
   updateUserRole,
   updateUserStatus,
   getAllUsers,

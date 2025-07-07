@@ -40,6 +40,40 @@ const sendNotification = async (uid, message) => {
   }
 };
 
+const sendNotificationsForUser = async (userId) => {
+  try {
+    const userRef = db.collection("users").doc(userId);
+    const userSnapshot = await userRef.get();
+
+    // Send push notifications to each user
+    const userData = userSnapshot.data();
+    const payload = {
+      title: "Self-Check Reminder",
+      body: `Dear ${userData.name} ${userData.surname}. Please complete your self-check.`,
+      icon: "/logo192.png",
+      data: {
+        url: "/self-check", // URL to open when the notification is clicked
+      },
+    };
+    // Create a notification request
+    const requestRef = db.collection("requests").doc();
+    const requestData = {
+      //...userData,
+      uid: userData.uid,
+      email: userData.email,
+      region: userData.region,
+      userId,
+      createdAt: new Date().toISOString(),
+      type: "self-check",
+    };
+    await requestRef.set(requestData);
+    console.log(`userData ${userData.uid}`);
+    await sendNotification(userData.uid, payload);
+  } catch (error) {
+    throw new Error("Failed to send notifications: " + error.message);
+  }
+};
+
 const sendNotificationsForRegion = async (regionId) => {
   try {
     const regionRef = db.collection("regions").doc(regionId);
@@ -103,6 +137,7 @@ const saveSubscription = async (subscription, uid) => {
 
 module.exports = {
   sendNotification,
+  sendNotificationsForUser,
   sendNotificationsForRegion,
   saveSubscription,
 };

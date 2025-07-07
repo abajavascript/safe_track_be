@@ -6,6 +6,7 @@ const {
   updateUserRole,
   updateUserStatus,
   updateUser,
+  updateUserFields,
   getAllUsers,
   getManagers,
   isTableEmpty,
@@ -15,6 +16,8 @@ const {
   validateToken,
   authorizeUser,
 } = require("../middleware/authMiddleware");
+const { sendNotificationsForUser } = require("../services/subscriptionService");
+
 const { auth } = require("../firebaseConfig");
 const router = express.Router();
 const { sendNotification } = require("../services/subscriptionService");
@@ -99,6 +102,9 @@ router.post("/add", validateToken, async (req, res) => {
       title: "Pending Approval",
       body: `${userData.name} ${userData.surname} has submitted their information and requires your approval.`,
       icon: "/logo192.png",
+      data: {
+        url: "/users", // URL to open when the notification is clicked
+      },
     };
     console.log("user add");
     console.log(userData);
@@ -137,6 +143,21 @@ router.put("/:id", validateToken, async (req, res) => {
   }
 });
 
+// Update user fields (Admin only)
+router.put("/update-user-fields/:uid", authorizeUser, async (req, res) => {
+  try {
+    if (req.userData.role !== "Admin") {
+      return res
+        .status(403)
+        .json({ success: false, message: "Only Admins can update roles" });
+    }
+    const response = await updateUserFields(req.params.uid, req.body);
+    res.status(200).json(response);
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 // Update user role (Admin only)
 router.put("/update-role/:uid", authorizeUser, async (req, res) => {
   try {
@@ -148,6 +169,29 @@ router.put("/update-role/:uid", authorizeUser, async (req, res) => {
     const response = await updateUserRole(req.params.uid, req.body.role);
     res.status(200).json(response);
   } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Verify user email (Admin only)
+router.put("/verify-email/:uid", authorizeUser, async (req, res) => {
+  try {
+    if (req.userData.role !== "Admin") {
+      return res
+        .status(403)
+        .json({ success: false, message: "Only Admins can verify email" });
+    }
+
+    const uid = req.params.uid;
+
+    // Update in Firebase Auth
+    await auth.updateUser(uid, { emailVerified: true });
+
+    res
+      .status(200)
+      .json({ success: true, message: "Email verified successfully" });
+  } catch (error) {
+    console.error("Failed to verify email:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 });
@@ -220,6 +264,21 @@ router.post("/add-or-update", authorizeUser, async (req, res) => {
   try {
     const response = await addOrUpdateUser(req.body);
     res.status(200).json(response);
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Send notifications to all approved users in a region
+router.post("/:userId/notify", async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Call the notification service
+    await sendNotificationsForUser(userId);
+    res
+      .status(200)
+      .json({ success: true, message: "Notifications sent successfully" });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
