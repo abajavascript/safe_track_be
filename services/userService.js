@@ -113,6 +113,20 @@ const getAllUsers = async (userUid, userRole) => {
             manager_name: "",
             role: "",
           });
+        } else if (!users.find((u) => u.uid === authUser.uid)) {
+          users.push({
+            uid: authUser.uid,
+            email: authUser.email,
+            emailVerified: true,
+            status: "No Info",
+            name: "",
+            surname: "",
+            phone: "",
+            region: "",
+            manager_uid: "",
+            manager_name: "",
+            role: "",
+          });
         }
       });
     } else {
