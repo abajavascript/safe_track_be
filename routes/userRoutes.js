@@ -84,9 +84,10 @@ router.post("/add", validateToken, async (req, res) => {
       const managerRef = await getUserById(req.body.manager_uid);
       const managerData = managerRef.data;
 
-      if (managerData.role === "Admin") {
-        role = "Operator"; // If the manager is Admin, assign Operator
-      }
+      // No Operator role for new users for a moment
+      // if (managerData.role === "Admin") {
+      //   role = "Operator"; // If the manager is Admin, assign Operator
+      // }
     }
 
     // Add the user with the determined role
