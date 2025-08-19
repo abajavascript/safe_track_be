@@ -235,26 +235,29 @@ router.delete("/:uid", authorizeUser, async (req, res) => {
 
     const targetUserExists = await existUserById(targetUserUid);
 
-    if (!targetUserExists) {
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found" });
+    if (targetUserExists) {
+      const targetUserData = await getUserById(targetUserUid);
+
+      // Admin can delete any user
+      if (
+        userRole === "Admin" ||
+        (userRole === "Operator" && targetUserData.data.manager_uid === userUid)
+      ) {
+        await deleteUserById(targetUserUid);
+      }
+    } else {
+      if (userRole === "Admin") {
+        await deleteUserById(targetUserUid);
+      }
     }
 
-    const targetUserData = await getUserById(targetUserUid);
+    // // delete user from firebase Auth
+    // await auth.deleteUser(targetUserUid);
 
-    // Admin can delete any user
-    if (
-      userRole === "Admin" ||
-      (userRole === "Operator" && targetUserData.data.manager_uid === userUid)
-    ) {
-      await deleteUserById(targetUserUid);
-      return res
-        .status(200)
-        .json({ success: true, message: "User deleted successfully" });
-    }
-
-    return res.status(403).json({ success: false, message: "Access denied" });
+    return res
+      .status(200)
+      .json({ success: true, message: "User deleted successfully" });
+    // return res.status(403).json({ success: false, message: "Access denied" });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
